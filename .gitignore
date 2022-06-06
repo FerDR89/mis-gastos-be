@@ -1,0 +1,7 @@
+mis-gastos.json
+node_modules
+yarn.lock
+be-dist
+dist
+.parcel-cache
+.env
