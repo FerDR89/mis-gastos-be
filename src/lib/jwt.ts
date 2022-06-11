@@ -1,6 +1,8 @@
 import * as jwt from "jsonwebtoken";
 
-const code = (userId: string): string => {
+const createToken = (userId: string) => {
+  console.log({ userId });
+
   const token = jwt.sign({ userId }, process.env.SECRET_WORD);
   return token;
 };
@@ -15,4 +17,4 @@ const decode = (token: string) => {
   }
 };
 
-export { code, decode };
+export { createToken, decode };

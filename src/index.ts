@@ -2,10 +2,11 @@ require("dotenv").config();
 import * as express from "express";
 import * as cors from "cors";
 import * as path from "path";
-import { sendCodeByEmail } from "./controllers/auth-controller";
+import { sendCodeByEmail, sendToken } from "./controllers/auth-controller";
 import { validateEmail, validateCode } from "./schemas";
 import { authMiddleware } from "./lib/middlewares";
-
+import { Auth } from "./models/auth";
+import { createToken, decode } from "./lib/jwt";
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors());
@@ -39,31 +40,34 @@ app.post("/auth", async (req, res) => {
 
 //Chequea en la db que el mail exista y que el código recibido sea el mismo para devolver un token valido.
 app.post("/auth/token", async (req, res) => {
-  // const { email, code } = req.body;
-  // const checkedEmail = await validateEmail(email);
-  // const checkedCode = await validateCode(code);
-  // if (checkedEmail && checkedCode) {
-  //   try {
-  //     // const result = await sendCodeByEmail(checkedEmail);
-  //     const result = true;
-  //     if (!result) {
-  //       res.status(500).json({
-  //         message: "Internal server error",
-  //       });
-  //     } else {
-  //       res.status(200).send({ result });
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     res.status(500).json({
-  //       message: "Internal server error",
-  //     });
-  //   }
-  // } else {
-  //   res.status(400).json({
-  //     message: "Invalid data",
-  //   });
-  // }
+  const { email, code } = req.body;
+  const checkedEmail = await validateEmail(email);
+  const checkedCode = await validateCode(code);
+  if (checkedEmail && checkedCode) {
+    try {
+      const token = await sendToken(checkedEmail, checkedCode);
+      if (token === null) {
+        res.status(401).json({
+          message: "Unauthorized",
+        });
+      } else {
+        res.status(200).send({ token });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  } else {
+    res.status(400).json({
+      message: "Invalid data",
+    });
+  }
+});
+
+app.get("/test", authMiddleware, (req: Request | any, res) => {
+  res.send(req._data.userId);
 });
 
 // //Tuve que castear el request porque sino no me permitia pasar en el request desde el middleware el userId

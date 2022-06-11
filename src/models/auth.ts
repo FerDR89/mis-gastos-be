@@ -1,5 +1,5 @@
 import { firestore } from "../lib/firestore";
-
+import { isAfter } from "date-fns";
 const collection = firestore.collection("auth");
 
 class Auth {
@@ -24,7 +24,33 @@ class Auth {
       if (results.empty) {
         return null;
       } else {
-        const firstMatch = results[0];
+        const firstMatch = results.docs[0];
+        const newAuth = new Auth(firstMatch.id);
+        newAuth.data = firstMatch.data();
+        return newAuth;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  isCodeExpire() {
+    const now = new Date();
+    // .toDate() es un método propio de Firestore que convierte el objeto expires (_seconds y _nanoseconds) en una fecha
+    const expires = this.data.expires.toDate();
+    return isAfter(now, expires);
+  }
+
+  static async findByEmailAndCode(email: string, code: number) {
+    try {
+      const results = await collection
+        .where("email", "==", email)
+        .where("code", "==", code)
+        .get();
+      if (results.empty) {
+        return null;
+      } else {
+        const firstMatch = results.docs[0];
         const newAuth = new Auth(firstMatch.id);
         newAuth.data = firstMatch.data();
         return newAuth;

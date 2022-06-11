@@ -2,11 +2,11 @@ import { Auth } from "../models/auth";
 import { User } from "../models/user";
 import { addMinutes } from "date-fns";
 import sendEmailCode from "../lib/sengrid";
+import { createToken } from "../lib/jwt";
 
 const findOrCreateAuth = async (email: string): Promise<Auth> => {
   try {
     const auth = await Auth.findByEmail(email);
-
     if (auth) {
       return auth;
     } else {
@@ -45,4 +45,21 @@ const sendCodeByEmail = async (email: string) => {
   }
 };
 
-export { sendCodeByEmail };
+const sendToken = async (email: string, code: number) => {
+  const result = await Auth.findByEmailAndCode(email, code);
+  //Si no hay resultados, nos devuelve el model null y esa misma repuesta se la paso
+  // al endpoint para que responda unauthorized
+  if (result === null) {
+    return null;
+  }
+  const expires = result.isCodeExpire();
+  //Si expiró el código, le paso null al endpoint para que responda unauthorized
+  if (expires) {
+    return null;
+  }
+
+  const token = createToken(result.data.userId);
+  return token;
+};
+
+export { sendCodeByEmail, sendToken };
