@@ -10,13 +10,17 @@ const findOrCreateAuth = async (email: string): Promise<Auth> => {
     if (auth) {
       return auth;
     } else {
-      const newUser = await User.createNewUser({ email });
+      const newUser = await User.createNewUser({
+        email,
+        createdAt: new Date(),
+      });
       const userId = newUser.id;
       const newAuth = await Auth.createNewAuth({
         email,
         userId,
         code: 0,
         expires: new Date(),
+        createdAt: new Date(),
       });
       return newAuth;
     }

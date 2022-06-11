@@ -3,10 +3,9 @@ import * as express from "express";
 import * as cors from "cors";
 import * as path from "path";
 import { sendCodeByEmail, sendToken } from "./controllers/auth-controller";
+import { findAllIncomes } from "./controllers/income-controller";
 import { validateEmail, validateCode } from "./schemas";
 import { authMiddleware } from "./lib/middlewares";
-import { Auth } from "./models/auth";
-import { createToken, decode } from "./lib/jwt";
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors());
@@ -66,30 +65,44 @@ app.post("/auth/token", async (req, res) => {
   }
 });
 
-app.get("/test", authMiddleware, (req: Request | any, res) => {
-  res.send(req._data.userId);
-});
-
-// //Tuve que castear el request porque sino no me permitia pasar en el request desde el middleware el userId
-// app.post("/endpointSeguro", authMiddleware, async (req: any, res)
-//   const { userId } = req._data;
-
 //Recibe el token del usuario, confirma que este autenticado y devuelve todos los ingresos asociados a ese usuario.
 //En el front puedo recibir todos los ingresos y realizar allí la sumatoría de todos
 //El userId lo extraigo del token
-// app.get("/income", (req, res) => {});
+app.get("/incomes", authMiddleware, async (req: any, res) => {
+  const { userId } = req._data;
+  if (!userId) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  }
+  try {
+    const allUserIncomes = await findAllIncomes(userId);
+    if (allUserIncomes === null) {
+      res.status(200).json({
+        results: [],
+      });
+    } else {
+      res.send({ results: allUserIncomes });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+});
 
 //Recibe el token del usuario, confirma que este autenticado y crea un ingreso (debo asignarle un id)
 //El userId lo extraigo del token, del body saco el incomeId
-// app.post("/income", (req, res) => {});
+// app.post("/incomes", async (req:any, res) => {});
 
 //Recibe el token del usuario, confirma que este autenticado y actualiza un ingreso especifico
 //El userId lo extraigo del token, del body saco el incomeId
-// app.patch("/income", (req, res) => {});
+// app.patch("/incomes/:incomeId", async (req:any, res) => {});
 
 //Recibe el token del usuario, confirma que este autenticado y borra un ingreso especifico.
 //El userId lo extraigo del token, del body saco el incomeId
-// app.delete("/incomed", (req, res) => {});
+// app.delete("/incomes/:incomeId", async (req:any, res) => {});
 
 //En el front puedo recibir todos los egresos y realizar allí la sumatoría de todos
 // app.get("/expense/:userId", (req, res) => {});

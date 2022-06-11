@@ -1,6 +1,6 @@
 import { firestore } from "../lib/firestore";
 
-const collection = firestore.collection("user");
+const collection = firestore.collection("users");
 
 class User {
   id: string;
