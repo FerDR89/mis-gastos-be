@@ -12,4 +12,20 @@ async function findAllIncomes(userId: string) {
   return allUserIncomes;
 }
 
-export { findAllIncomes };
+const createNewIncome = async (income: number, userId: string) => {
+  const newIncome = await Income.createNewIncome(income, userId);
+  if (newIncome === null) {
+    return null;
+  }
+  return newIncome;
+};
+
+// const updateIncome = async (income: number, userId: string) => {
+//   const newIncome = await Income.createNewIncome(income, userId);
+//   if (newIncome === null) {
+//     return null;
+//   }
+//   return newIncome;
+// };
+
+export { findAllIncomes, createNewIncome };

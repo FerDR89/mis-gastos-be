@@ -7,18 +7,27 @@ const schemaValidateEmail = yup
   .trim()
   .required()
   .strict(true);
-const schemaValidateCode = yup.number().required().strict(true);
 
-async function validateEmail(email: string) {
+async function validateEmail(email: string): Promise<string | void> {
   return await schemaValidateEmail.validate(email).catch(function (err) {
     console.log(err);
   });
 }
 
-async function validateCode(code: number) {
-  return await schemaValidateCode.validate(code).catch(function (err) {
+const schemaValidateNumber = yup.number().positive().required().strict(true);
+
+async function validateNumber(code: number): Promise<number | void> {
+  return await schemaValidateNumber.validate(code).catch(function (err) {
     console.log(err);
   });
 }
 
-export { validateEmail, validateCode };
+const schemaValidateString = yup.string().required().strict(true);
+
+async function validateString(string: string): Promise<string | void> {
+  return await schemaValidateString.validate(string).catch(function (err) {
+    console.log(err);
+  });
+}
+
+export { validateEmail, validateNumber, validateString };

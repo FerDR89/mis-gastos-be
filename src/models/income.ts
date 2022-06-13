@@ -9,19 +9,39 @@ class Income {
   constructor(id) {
     (this.id = id), (this.ref = collection.doc(id));
   }
+
   async pull() {
     const snap = await this.ref.get();
     this.data = snap.data();
   }
+
   async push() {
     await this.ref.update(this.data);
   }
-  static async createNewIncome(data) {
-    const newIncomeSnap = await collection.add(data);
-    const newIncome = new Income(newIncomeSnap.id);
-    newIncome.data = data;
-    return Income;
+
+  static async createNewIncome(income: number, userId: string) {
+    try {
+      const newIncomeSnap = await collection.add({
+        income,
+        userId,
+        createAt: new Date(),
+      });
+      const newIncome = new Income(newIncomeSnap.id);
+      const incomeId = newIncome.id;
+      newIncome.data = {
+        income,
+        userId,
+        createAt: new Date(),
+        incomeId,
+      };
+      await newIncome.push();
+      return newIncome;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
   }
+
   static async findAllIncomes(userId: string) {
     try {
       const allUserIncomes = await collection

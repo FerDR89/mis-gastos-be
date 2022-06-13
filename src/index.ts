@@ -3,8 +3,11 @@ import * as express from "express";
 import * as cors from "cors";
 import * as path from "path";
 import { sendCodeByEmail, sendToken } from "./controllers/auth-controller";
-import { findAllIncomes } from "./controllers/income-controller";
-import { validateEmail, validateCode } from "./schemas";
+import {
+  findAllIncomes,
+  createNewIncome,
+} from "./controllers/income-controller";
+import { validateEmail, validateNumber, validateString } from "./schemas";
 import { authMiddleware } from "./lib/middlewares";
 const app = express();
 const port = process.env.PORT || 3000;
@@ -40,8 +43,8 @@ app.post("/auth", async (req, res) => {
 //Chequea en la db que el mail exista y que el código recibido sea el mismo para devolver un token valido.
 app.post("/auth/token", async (req, res) => {
   const { email, code } = req.body;
-  const checkedEmail = await validateEmail(email);
-  const checkedCode = await validateCode(code);
+  const checkedEmail: string | void = await validateEmail(email);
+  const checkedCode: number | void = await validateNumber(code);
   if (checkedEmail && checkedCode) {
     try {
       const token = await sendToken(checkedEmail, checkedCode);
@@ -66,39 +69,74 @@ app.post("/auth/token", async (req, res) => {
 });
 
 //Recibe el token del usuario, confirma que este autenticado y devuelve todos los ingresos asociados a ese usuario.
-//En el front puedo recibir todos los ingresos y realizar allí la sumatoría de todos
-//El userId lo extraigo del token
 app.get("/incomes", authMiddleware, async (req: any, res) => {
-  const { userId } = req._data;
-  if (!userId) {
+  if (req._data === null) {
     res.status(401).json({
       message: "Unauthorized",
     });
-  }
-  try {
-    const allUserIncomes = await findAllIncomes(userId);
-    if (allUserIncomes === null) {
-      res.status(200).json({
-        results: [],
+  } else {
+    try {
+      const { userId } = req._data;
+      const allUserIncomes = await findAllIncomes(userId);
+      if (allUserIncomes === null) {
+        res.status(200).json({
+          results: [],
+        });
+      } else {
+        res.send({ results: allUserIncomes });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        message: "Internal server error",
       });
-    } else {
-      res.send({ results: allUserIncomes });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Internal server error",
-    });
   }
 });
 
 //Recibe el token del usuario, confirma que este autenticado y crea un ingreso (debo asignarle un id)
-//El userId lo extraigo del token, del body saco el incomeId
-// app.post("/incomes", async (req:any, res) => {});
+app.post("/incomes", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else {
+    try {
+      const validatedNumber: number | void = await validateNumber(
+        req.body.income
+      );
+      if (!validatedNumber) {
+        res.status(400).json({
+          message: "Bad request",
+        });
+      } else {
+        //Ver como tipar esto sin tener que castearlo
+        const userId = req._data.userId;
+        const newIncome = await createNewIncome(
+          validatedNumber as number,
+          userId
+        );
+        if (newIncome === null) {
+          res.status(500).json({
+            message: "Internal server error",
+          });
+        }
+        res.send({ createdIncome: true });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
 //Recibe el token del usuario, confirma que este autenticado y actualiza un ingreso especifico
 //El userId lo extraigo del token, del body saco el incomeId
-// app.patch("/incomes/:incomeId", async (req:any, res) => {});
+app.patch("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
+  console.log(req.params);
+  res.send("ok");
+});
 
 //Recibe el token del usuario, confirma que este autenticado y borra un ingreso especifico.
 //El userId lo extraigo del token, del body saco el incomeId
