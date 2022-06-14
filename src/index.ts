@@ -6,6 +6,8 @@ import { sendCodeByEmail, sendToken } from "./controllers/auth-controller";
 import {
   findAllIncomes,
   createNewIncome,
+  updateIncome,
+  deleteIncome,
 } from "./controllers/income-controller";
 import { validateEmail, validateNumber, validateString } from "./schemas";
 import { authMiddleware } from "./lib/middlewares";
@@ -100,6 +102,10 @@ app.post("/incomes", authMiddleware, async (req: any, res) => {
     res.status(401).json({
       message: "Unauthorized",
     });
+  } else if (!req.body.income) {
+    res.status(400).json({
+      message: "Bad request",
+    });
   } else {
     try {
       const validatedNumber: number | void = await validateNumber(
@@ -110,8 +116,8 @@ app.post("/incomes", authMiddleware, async (req: any, res) => {
           message: "Bad request",
         });
       } else {
-        //Ver como tipar esto sin tener que castearlo
         const userId = req._data.userId;
+        //Ver como tipar esto sin tener que castearlo
         const newIncome = await createNewIncome(
           validatedNumber as number,
           userId
@@ -132,15 +138,64 @@ app.post("/incomes", authMiddleware, async (req: any, res) => {
 });
 
 //Recibe el token del usuario, confirma que este autenticado y actualiza un ingreso especifico
-//El userId lo extraigo del token, del body saco el incomeId
 app.patch("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
-  console.log(req.params);
-  res.send("ok");
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else if (!req.body.income) {
+    res.status(400).json({
+      message: "Bad request",
+    });
+  } else {
+    try {
+      const incomeId: string = req.params.incomeId;
+      const validatedIncome: number | void = await validateNumber(
+        req.body.income
+      );
+      if (incomeId && validatedIncome) {
+        const income = await updateIncome(incomeId, validatedIncome as number);
+        if (!income) {
+          res.status(500).json({
+            message: "Internal server error",
+          });
+        }
+        res.send({ updatedIncome: true });
+      } else {
+        res.status(400).json({
+          message: "No entra acá",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
 });
 
 //Recibe el token del usuario, confirma que este autenticado y borra un ingreso especifico.
-//El userId lo extraigo del token, del body saco el incomeId
-// app.delete("/incomes/:incomeId", async (req:any, res) => {});
+app.delete("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else {
+    try {
+      const income = await deleteIncome(req.params.incomeId);
+      if (income === null) {
+        res.status(500).json({
+          message: "Internal server error",
+        });
+      }
+      res.send({ deletedIncome: true });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
 //En el front puedo recibir todos los egresos y realizar allí la sumatoría de todos
 // app.get("/expense/:userId", (req, res) => {});

@@ -42,6 +42,16 @@ class Income {
     }
   }
 
+  static async deleteIncome(incomeId: string) {
+    try {
+      await collection.doc(incomeId).delete();
+      return true;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
   static async findAllIncomes(userId: string) {
     try {
       const allUserIncomes = await collection
