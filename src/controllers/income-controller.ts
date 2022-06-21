@@ -1,18 +1,27 @@
 import { Income } from "../models/income";
 
-async function findAllIncomes(userId: string) {
+async function findAllIncomes(userId: string): Promise<{}[]> {
   const results = await Income.findAllIncomes(userId);
   if (results === null) {
     return null;
   }
-  const allUserIncomes = results.map((snap) => {
-    const data = snap.data();
-    return { income: data.income, incomeId: data.incomeId };
-  });
+  const allUserIncomes: { income: number; incomeId: string }[] = results.map(
+    (snap) => {
+      const data = snap.data();
+      return {
+        income: data.income,
+        incomeId: data.incomeId,
+        created: data.createAt,
+      };
+    }
+  );
   return allUserIncomes;
 }
 
-const createNewIncome = async (income: number, userId: string) => {
+const createNewIncome = async (
+  income: number,
+  userId: string
+): Promise<Income> => {
   const newIncome = await Income.createNewIncome(income, userId);
   if (newIncome === null) {
     return null;
@@ -20,7 +29,10 @@ const createNewIncome = async (income: number, userId: string) => {
   return newIncome;
 };
 
-const updateIncome = async (incomeId: string, updatedIncome: number) => {
+const updateIncome = async (
+  incomeId: string,
+  updatedIncome: number
+): Promise<Income> => {
   const existIncome = await new Income(incomeId);
   await existIncome.pull();
   existIncome.data.income = updatedIncome;

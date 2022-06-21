@@ -9,6 +9,13 @@ import {
   updateIncome,
   deleteIncome,
 } from "./controllers/income-controller";
+import {
+  findAllExpenses,
+  createNewExpense,
+  updateExpense,
+  deleteExpense,
+} from "./controllers/expense-controller";
+
 import { validateEmail, validateNumber, validateString } from "./schemas";
 import { authMiddleware } from "./lib/middlewares";
 const app = express();
@@ -163,7 +170,7 @@ app.patch("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
         res.send({ updatedIncome: true });
       } else {
         res.status(400).json({
-          message: "No entra acá",
+          message: "Bad request",
         });
       }
     } catch (error) {
@@ -197,20 +204,135 @@ app.delete("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
   }
 });
 
-//En el front puedo recibir todos los egresos y realizar allí la sumatoría de todos
-// app.get("/expense/:userId", (req, res) => {});
+//Recibe el token del usuario, confirma que este autenticado y devuelve todos los egresos registraodos
+app.get("/expense", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else {
+    try {
+      const { userId } = req._data;
+      const allUserExpenses = await findAllExpenses(userId);
+      if (allUserExpenses === null) {
+        res.status(200).json({
+          results: [],
+        });
+      } else {
+        res.send({ results: allUserExpenses });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
-//Recibe el token del usuario, confirma que este autenticado y crea un egreso (debo asignarle un id)
-//El userId lo extraigo del token, del body saco el expenseId
-// app.post("/expense", (req, res) => {});
+//Recibe el token del usuario, confirma que este autenticado y crea un egreso
+app.post("/expense", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else if (!req.body.expense) {
+    res.status(400).json({
+      message: "Bad request",
+    });
+  } else {
+    try {
+      const validatedNumber: number | void = await validateNumber(
+        req.body.expense
+      );
+      if (!validatedNumber) {
+        res.status(400).json({
+          message: "Bad request",
+        });
+      } else {
+        const userId = req._data.userId;
+        //Ver como tipar esto sin tener que castearlo
+        const newExpense = await createNewExpense(
+          validatedNumber as number,
+          userId
+        );
+        if (newExpense === null) {
+          res.status(500).json({
+            message: "Internal server error",
+          });
+        }
+        res.send({ createdExpense: true });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
-//Recibe el token del usuario, confirma que este autenticado y actualiza un egreso
-//El userId lo extraigo del token, del body saco el expenseId
-// app.patch("/expense", (req, res) => {});
+//Recibe el token del usuario, confirma que este autenticado y actualiza un egreso especifico
+app.patch("/expense/:expenseId", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else if (!req.body.expense) {
+    res.status(400).json({
+      message: "Bad request",
+    });
+  } else {
+    try {
+      const expenseId: string = req.params.expenseId;
+      const validatedExpense: number | void = await validateNumber(
+        req.body.expense
+      );
+      if (expenseId && validatedExpense) {
+        const expense = await updateExpense(
+          expenseId,
+          validatedExpense as number
+        );
+        if (!expense) {
+          res.status(500).json({
+            message: "Internal server error",
+          });
+        }
+        res.send({ updatedExpense: true });
+      } else {
+        res.status(400).json({
+          message: "Bad request",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
-//Recibe el token del usuario, confirma que este autenticado y borra un egreso (debo asignarle un id)
-//El userId lo extraigo del token, del body saco el expenseId
-// app.delete("/expense", (req, res) => {});
+//Recibe el token del usuario, confirma que este autenticado y borra un egreso especifico.
+app.delete("/expense/:expenseId", authMiddleware, async (req: any, res) => {
+  if (req._data === null) {
+    res.status(401).json({
+      message: "Unauthorized",
+    });
+  } else {
+    try {
+      const expense = await deleteExpense(req.params.expenseId);
+      if (expense === null) {
+        res.status(500).json({
+          message: "Internal server error",
+        });
+      }
+      res.send({ deletedExpense: true });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+});
 
 app.listen(port, () => {
   console.log("SVR ON", port);
