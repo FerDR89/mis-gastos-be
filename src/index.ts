@@ -52,9 +52,9 @@ app.post("/auth", async (req, res) => {
 //Chequea en la db que el mail exista y que el código recibido sea el mismo para devolver un token valido.
 app.post("/auth/token", async (req, res) => {
   const { email, code } = req.body;
-  const parseCode = JSON.parse(code);
+  // const parseCode = JSON.parse(code);
   const checkedEmail: string | void = await validateEmail(email);
-  const checkedCode: number | void = await validateNumber(parseCode);
+  const checkedCode: number | void = await validateNumber(code);
   if (checkedEmail && checkedCode) {
     try {
       const token = await sendToken(checkedEmail, checkedCode);
