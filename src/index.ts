@@ -115,9 +115,8 @@ app.post("/incomes", authMiddleware, async (req: any, res) => {
     });
   } else {
     try {
-      const validatedIncome: number | void = await validateNumber(
-        req.body.income
-      );
+      const parsedIncome = parseInt(req.body.income);
+      const validatedIncome: number | void = await validateNumber(parsedIncome);
       const validatedType: string | void = await validateString(req.body.type);
       if (!validatedIncome || !validatedType) {
         res.status(400).json({
@@ -158,9 +157,8 @@ app.patch("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
   } else {
     try {
       const incomeId: string = req.params.incomeId;
-      const validatedIncome: number | void = await validateNumber(
-        req.body.income
-      );
+      const parsedIncome = parseInt(req.body.income);
+      const validatedIncome: number | void = await validateNumber(parsedIncome);
       const validatedType: string | void = await validateString(req.body.type);
       if (incomeId && validatedIncome && validatedType) {
         const income = await updateIncome(
@@ -248,8 +246,9 @@ app.post("/expense", authMiddleware, async (req: any, res) => {
     });
   } else {
     try {
+      const parsedExpense = parseInt(req.body.expense);
       const validatedExpense: number | void = await validateNumber(
-        req.body.expense
+        parsedExpense
       );
       const validatedType: string | void = await validateString(req.body.type);
       if (!validatedExpense || !validatedType) {
@@ -291,8 +290,9 @@ app.patch("/expense/:expenseId", authMiddleware, async (req: any, res) => {
   } else {
     try {
       const expenseId: string = req.params.expenseId;
+      const parsedExpense = parseInt(req.body.expense);
       const validatedExpense: number | void = await validateNumber(
-        req.body.expense
+        parsedExpense
       );
       const validatedType: string | void = await validateString(req.body.type);
       if (expenseId && validatedExpense && validatedType) {
