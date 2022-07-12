@@ -1,7 +1,6 @@
 require("dotenv").config();
 import * as express from "express";
 import * as cors from "cors";
-import * as path from "path";
 import { sendCodeByEmail, sendToken } from "./controllers/auth-controller";
 import {
   findAllIncomes,
@@ -116,19 +115,20 @@ app.post("/incomes", authMiddleware, async (req: any, res) => {
     });
   } else {
     try {
-      const validatedNumber: number | void = await validateNumber(
+      const validatedIncome: number | void = await validateNumber(
         req.body.income
       );
-      if (!validatedNumber) {
+      const validatedType: string | void = await validateString(req.body.type);
+      if (!validatedIncome || !validatedType) {
         res.status(400).json({
           message: "Bad request",
         });
       } else {
         const userId = req._data.userId;
-        //Ver como tipar esto sin tener que castearlo
         const newIncome = await createNewIncome(
-          validatedNumber as number,
-          userId
+          validatedIncome as number,
+          userId,
+          validatedType as string
         );
         if (newIncome === null) {
           res.status(500).json({
@@ -161,8 +161,13 @@ app.patch("/incomes/:incomeId", authMiddleware, async (req: any, res) => {
       const validatedIncome: number | void = await validateNumber(
         req.body.income
       );
-      if (incomeId && validatedIncome) {
-        const income = await updateIncome(incomeId, validatedIncome as number);
+      const validatedType: string | void = await validateString(req.body.type);
+      if (incomeId && validatedIncome && validatedType) {
+        const income = await updateIncome(
+          incomeId,
+          validatedIncome as number,
+          validatedType as string
+        );
         if (!income) {
           res.status(500).json({
             message: "Internal server error",
@@ -243,19 +248,20 @@ app.post("/expense", authMiddleware, async (req: any, res) => {
     });
   } else {
     try {
-      const validatedNumber: number | void = await validateNumber(
+      const validatedExpense: number | void = await validateNumber(
         req.body.expense
       );
-      if (!validatedNumber) {
+      const validatedType: string | void = await validateString(req.body.type);
+      if (!validatedExpense || !validatedType) {
         res.status(400).json({
           message: "Bad request",
         });
       } else {
         const userId = req._data.userId;
-        //Ver como tipar esto sin tener que castearlo
         const newExpense = await createNewExpense(
-          validatedNumber as number,
-          userId
+          validatedExpense as number,
+          userId,
+          validatedType as string
         );
         if (newExpense === null) {
           res.status(500).json({
@@ -288,10 +294,12 @@ app.patch("/expense/:expenseId", authMiddleware, async (req: any, res) => {
       const validatedExpense: number | void = await validateNumber(
         req.body.expense
       );
-      if (expenseId && validatedExpense) {
+      const validatedType: string | void = await validateString(req.body.type);
+      if (expenseId && validatedExpense && validatedType) {
         const expense = await updateExpense(
           expenseId,
-          validatedExpense as number
+          validatedExpense as number,
+          validatedType as string
         );
         if (!expense) {
           res.status(500).json({

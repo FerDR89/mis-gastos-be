@@ -1,28 +1,44 @@
 import { Expense } from "../models/expense";
 
+type AllUserExpenses = {
+  expense: number;
+  expenseId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}[];
+
 async function findAllExpenses(userId: string): Promise<{}[]> {
   const results = await Expense.findAllExpenses(userId);
   if (results === null) {
     return null;
   }
-  const allUserExpenses: { expense: number; expenseId: string }[] = results.map(
-    (snap) => {
-      const data = snap.data();
-      return {
-        expense: data.expense,
-        expenseId: data.expenseId,
-        created: data.createAt,
-      };
+  const allUserExpenses: AllUserExpenses = results.map((snap) => {
+    const data = snap.data();
+
+    let finalData = {
+      expense: data.expense,
+      expenseId: data.expenseId,
+      type: data.type,
+    };
+
+    if (data.createdAt) {
+      finalData["createdAt"] = data.createdAt.toDate();
     }
-  );
+
+    if (data.updatedAt) {
+      finalData["updatedAt"] = data.updatedAt.toDate();
+    }
+    return finalData;
+  });
   return allUserExpenses;
 }
 
 const createNewExpense = async (
   expense: number,
-  userId: string
+  userId: string,
+  type: string
 ): Promise<Expense> => {
-  const newExpense = await Expense.createNewExpense(expense, userId);
+  const newExpense = await Expense.createNewExpense(expense, userId, type);
   if (newExpense === null) {
     return null;
   }
@@ -31,11 +47,13 @@ const createNewExpense = async (
 
 const updateExpense = async (
   expenseId: string,
-  updatedIncome: number
+  updatedExpense: number,
+  updatedType: string
 ): Promise<Expense> => {
   const existExpense = await new Expense(expenseId);
   await existExpense.pull();
-  existExpense.data.expense = updatedIncome;
+  existExpense.data.expense = updatedExpense;
+  existExpense.data.type = updatedType;
   existExpense.data.updatedAt = new Date();
   await existExpense.push();
   return existExpense;

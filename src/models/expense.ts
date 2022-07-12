@@ -19,19 +19,17 @@ class Expense {
     await this.ref.update(this.data);
   }
 
-  static async createNewExpense(expense: number, userId: string) {
+  static async createNewExpense(expense: number, userId: string, type: string) {
     try {
       const newExpenseSnap = await collection.add({
         expense,
+        type,
         userId,
-        createAt: new Date(),
+        createdAt: new Date(),
       });
       const newExpense = new Expense(newExpenseSnap.id);
       const expenseId = newExpense.id;
       newExpense.data = {
-        expense,
-        userId,
-        createAt: new Date(),
         expenseId,
       };
       await newExpense.push();
@@ -60,6 +58,7 @@ class Expense {
       if (allUserExpenses.empty) {
         return null;
       }
+
       return allUserExpenses.docs;
     } catch (error) {
       console.log(error);

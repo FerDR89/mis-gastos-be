@@ -19,19 +19,17 @@ class Income {
     await this.ref.update(this.data);
   }
 
-  static async createNewIncome(income: number, userId: string) {
+  static async createNewIncome(income: number, userId: string, type: string) {
     try {
       const newIncomeSnap = await collection.add({
         income,
+        type,
         userId,
-        createAt: new Date(),
+        createdAt: new Date(),
       });
       const newIncome = new Income(newIncomeSnap.id);
       const incomeId = newIncome.id;
       newIncome.data = {
-        income,
-        userId,
-        createAt: new Date(),
         incomeId,
       };
       await newIncome.push();
